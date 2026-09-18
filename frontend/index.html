@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResiScrape Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#121212',
+                        neongreen: '#0cf574',
+                        errorred: '#f50c40',
+                        lightgray: '#e0e0e0',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <header class="border-b border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold text-neongreen">ResiScrape</h1>
+            <p class="text-lightgray text-sm mt-1">High-tech proxy command center</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Get Next Proxy -->
+            <section class="bg-gray-900 rounded-lg p-6 border border-gray-800 shadow-lg">
+                <h2 class="text-xl font-semibold mb-4 text-white">Proxy Pool</h2>
+                <button id="btn-next-proxy" class="bg-neongreen text-black font-semibold py-2 px-4 rounded hover:opacity-80 transition w-full mb-4">
+                    Get Next Active Proxy
+                </button>
+                <div class="bg-black p-4 rounded text-center">
+                    <span id="proxy-result" class="font-mono text-neongreen text-lg">---</span>
+                </div>
+            </section>
+
+            <!-- Submit Job -->
+            <section class="bg-gray-900 rounded-lg p-6 border border-gray-800 shadow-lg">
+                <h2 class="text-xl font-semibold mb-4 text-white">Submit Scraping Job</h2>
+                <form id="job-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Job ID</label>
+                        <input type="text" id="job-id" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-mono text-sm focus:border-neongreen outline-none" placeholder="job_001" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Target URL</label>
+                        <input type="url" id="target-url" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-mono text-sm focus:border-neongreen outline-none" placeholder="https://example.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Status</label>
+                        <select id="status" class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm focus:border-neongreen outline-none">
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-neongreen text-black font-semibold py-2 px-4 rounded hover:opacity-80 transition w-full">
+                        Submit Job
+                    </button>
+                    <div id="job-result" class="text-sm font-mono text-center hidden"></div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8008/api";
+
+        document.getElementById("btn-next-proxy").addEventListener("click", async () => {
+            const resultEl = document.getElementById("proxy-result");
+            try {
+                const res = await fetch(`${API_URL}/proxy/next`);
+                const data = await res.json();
+                if (res.ok) {
+                    resultEl.textContent = data.proxy;
+                    resultEl.className = "font-mono text-neongreen text-lg";
+                } else {
+                    resultEl.textContent = data.detail || "Error";
+                    resultEl.className = "font-mono text-errorred text-lg";
+                }
+            } catch (err) {
+                resultEl.textContent = "Network Error";
+                resultEl.className = "font-mono text-errorred text-lg";
+            }
+        });
+
+        document.getElementById("job-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const resultEl = document.getElementById("job-result");
+            resultEl.classList.remove("hidden");
+            
+            const payload = {
+                job_id: document.getElementById("job-id").value,
+                target_url: document.getElementById("target-url").value,
+                status: document.getElementById("status").value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/jobs`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    resultEl.textContent = data.message;
+                    resultEl.className = "text-sm font-mono text-center text-neongreen mt-4";
+                } else {
+                    resultEl.textContent = "Error submitting job";
+                    resultEl.className = "text-sm font-mono text-center text-errorred mt-4";
+                }
+            } catch (err) {
+                resultEl.textContent = "Network Error";
+                resultEl.className = "text-sm font-mono text-center text-errorred mt-4";
+            }
+        });
+    </script>
+</body>
+</html>

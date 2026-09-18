@@ -1,20 +1,30 @@
-from pydantic import BaseModel, UUID4
-from typing import Optional
+from pydantic import BaseModel, HttpUrl
+from typing import Optional, Literal
+from datetime import datetime
 
-class Proxy(BaseModel):
-    id: UUID4
+class ProxyBase(BaseModel):
     ip: str
     port: int
-    status: str
-    failure_count: int
+    status: Literal['active', 'inactive', 'banned'] = 'active'
+    failure_count: int = 0
 
-class TargetDomain(BaseModel):
-    id: UUID4
+class Proxy(ProxyBase):
+    id: int
+    created_at: datetime
+
+class TargetDomainBase(BaseModel):
     domain: str
-    strictness_level: int
+    strictness_level: Literal['low', 'medium', 'high']
 
-class ScrapingJob(BaseModel):
-    id: UUID4
-    target_url: str
-    used_proxy_id: UUID4
+class TargetDomain(TargetDomainBase):
+    id: int
+    created_at: datetime
+
+class ScrapingJobBase(BaseModel):
+    target_url: HttpUrl
+    used_proxy_id: Optional[int]
     success: bool
+
+class ScrapingJob(ScrapingJobBase):
+    id: int
+    created_at: datetime
